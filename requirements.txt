@@ -1,0 +1,9 @@
+# Example requirements.txt
+Pillow>=9.0.0       # Or the specific version you used
+pytesseract>=0.3.9
+pdf2image>=1.16.0
+PyPDF2>=3.0.0       # Or version 2.x if you used that syntax
+reportlab>=3.6.0
+opencv-python>=4.5.0 # Or opencv-python-headless if you don't need GUI parts of OpenCV
+tkinterdnd2>=0.3    # Check the exact version you installed
+numpy>=1.20.0       # OpenCV depends on numpy
