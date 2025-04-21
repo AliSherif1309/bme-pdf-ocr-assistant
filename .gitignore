@@ -1,0 +1,25 @@
+# Python specific
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+*.spec
+venv/
+.venv/
+env/
+*.log
+*.exe
+*.dll
+
+# Cache files
+.cache/
+
+# Configuration (optional - commit if defaults are okay, ignore if it contains secrets/local paths)
+# pdf_ocr_config.json
+
+# OS specific
+.DS_Store
+Thumbs.db
