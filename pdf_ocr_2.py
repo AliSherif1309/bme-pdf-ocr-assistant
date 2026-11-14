@@ -2,6 +2,9 @@
 import os
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk, scrolledtext
+from app_storage import data_file
+from dependency_paths import find_tool, poppler_directory
+from pathlib import Path
 import subprocess
 import glob
 import hashlib
@@ -138,17 +141,22 @@ else:
     APP_DIR = os.path.dirname(os.path.abspath(__file__))
     BASE_DIR = APP_DIR
 
-TESSERACT_PATH = os.path.join(BASE_DIR, "Tesseract-OCR", "tesseract.exe")
-GHOSTSCRIPT_PATH = os.path.join(BASE_DIR, "Ghostscript", "bin", "gswin64c.exe")
-CONFIG_FILE_PATH = os.path.join(APP_DIR, CONFIG_FILENAME)
+TESSERACT_PATH = find_tool('TESSERACT_PATH',
+    [os.path.join(BASE_DIR, 'Tesseract-OCR', 'tesseract.exe')], ['tesseract'])
+GHOSTSCRIPT_PATH = find_tool('GHOSTSCRIPT_PATH',
+    [os.path.join(BASE_DIR, 'Ghostscript', 'bin', 'gswin64c.exe')]
+    + list(Path(BASE_DIR).glob('gs/*/bin/gswin64c.exe')),
+    ['gswin64c', 'gswin32c', 'gs'])
+CONFIG_FILE_PATH = data_file('BMEPdfOCR', CONFIG_FILENAME, [APP_DIR])
+DATA_DIR = os.path.dirname(CONFIG_FILE_PATH)
 
 try:
     pytesseract.pytesseract.tesseract_cmd = TESSERACT_PATH
 except Exception as e:
     print(f"Warning: Could not set Tesseract path: {e}")
 
-CACHE_DIR = os.path.join(APP_DIR, ".cache")
-LOG_FILE_PATH = os.path.join(APP_DIR, LOG_FILENAME)
+CACHE_DIR = os.path.join(DATA_DIR, ".cache")
+LOG_FILE_PATH = data_file('BMEPdfOCR', LOG_FILENAME, [APP_DIR])
 os.makedirs(CACHE_DIR, exist_ok=True)
 
 logging.basicConfig(
@@ -209,6 +217,11 @@ def parse_page_range(range_str: str, max_pages: int) -> Optional[Set[int]]:
 def check_dependencies():
     missing = []
     if not os.path.exists(TESSERACT_PATH): missing.append(f"Tesseract OCR not found at: {TESSERACT_PATH}")
+    poppler = poppler_directory(BASE_DIR)
+    for command in ('pdfinfo', 'pdftoppm'):
+        executable = os.path.join(poppler, command + ('.exe' if os.name == 'nt' else '')) if poppler else shutil.which(command)
+        if not executable or not os.path.isfile(executable):
+            missing.append(f"Poppler {command} missing. Install Poppler or set POPPLER_PATH.")
     if not os.path.exists(GHOSTSCRIPT_PATH): missing.append(f"Ghostscript (optional for compression) not found at: {GHOSTSCRIPT_PATH}")
     return missing
 
@@ -311,8 +324,7 @@ def pdf_to_images(pdf_path: str, dpi: int = DEFAULT_CONVERSION_DPI) -> Tuple[Lis
 
         # 4. Convert using pdf2image
         logger.info(f"Cache miss or incomplete. Converting PDF to images (DPI={dpi}).")
-        poppler_path = os.path.join(BASE_DIR, "poppler", "bin") if getattr(sys, 'frozen', False) else None
-        if poppler_path and not os.path.isdir(poppler_path): poppler_path = None
+        poppler_path = poppler_directory(BASE_DIR)
 
         images = convert_from_path(pdf_path, dpi=dpi, poppler_path=poppler_path, strict=True)
 
@@ -957,8 +969,8 @@ class PDFOCRApp:
         if missing_execs:
             self.log_message("ERROR", "Dependency check failed for executables:")
             for dep in missing_execs: self.log_message("ERROR", f" - {dep}")
-            if any("Tesseract" in s for s in missing_execs):
-                 messagebox.showerror("Critical Dependency Missing", f"Tesseract OCR not found at:\n{TESSERACT_PATH}\n\nOCR functionality will be disabled.")
+            if any("Tesseract" in s or "Poppler" in s for s in missing_execs):
+                 messagebox.showerror("Critical Dependency Missing", "\n".join(dep for dep in missing_execs if "Tesseract" in dep or "Poppler" in dep))
                  self.process_button.config(state="disabled")
             if any("Ghostscript" in s for s in missing_execs): self.log_message("WARN", "Ghostscript missing. Compression option will not work.")
         if not cv2:

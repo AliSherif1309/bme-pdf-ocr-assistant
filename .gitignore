@@ -23,3 +23,7 @@ env/
 # OS specific
 .DS_Store
 Thumbs.db
+# Local Python environments and test output
+.venv/
+__pycache__/
+*.pyc

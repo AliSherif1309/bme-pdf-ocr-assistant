@@ -143,3 +143,17 @@ The application automatically saves your last used directories and selected opti
 *   **OCR Accuracy Issues:** Try enabling Grayscale/Binarization options. Ensure the correct language pack is selected and installed for Tesseract. Check the source PDF scan quality.
 *   **Antivirus Flags:** Standalone executables created by PyInstaller can sometimes trigger false positives from antivirus software. You may need to add an exception for the application.
 *   **Check Logs:** For detailed error information, consult the `pdf_ocr_tool.log` file created in the application's directory.
+## Maintained source setup
+
+Use Python 3.10 or newer in a virtual environment, then run
+`python -m pip install -r requirements.txt`. Tkinter must be installed with Python
+(on Linux, install your distribution's Python Tk package).
+
+Settings and history now live in the per-user `BMEPdfOCR` application data
+folder. Existing files beside the script are copied on first use; originals are
+retained. Set `BMEPDFOCR_DATA_DIR` to select a different data directory.
+
+Install Tesseract and Poppler separately; Ghostscript is optional for
+compression. Tools are discovered from bundled folders or PATH. Override with
+`TESSERACT_PATH` and `GHOSTSCRIPT_PATH` (full executable paths), and
+`POPPLER_PATH` (directory containing pdfinfo and pdftoppm).
